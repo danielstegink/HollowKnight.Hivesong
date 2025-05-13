@@ -3,8 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|c:\\users\\danie\\onedrive\\documents\\github\\hollowknight.hivesong\\hivesong\\hivesong.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|solutionrelative:hivesong\\hivesong.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|c:\\users\\danie\\onedrive\\documents\\github\\hollowknight.hivesong\\hivesong\\charms\\hivesong.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|solutionrelative:hivesong\\charms\\hivesong.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|c:\\users\\danie\\onedrive\\documents\\github\\hollowknight.hivesong\\hivesong\\readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|solutionrelative:hivesong\\readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|c:\\users\\danie\\onedrive\\documents\\github\\hollowknight.hivesong\\hivesong\\hivesong.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{74C56F4E-D132-487F-94E7-F1BD03B9BF46}|Hivesong\\Hivesong.csproj|solutionrelative:hivesong\\hivesong.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,19 +22,45 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "README.md",
+              "DocumentMoniker": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\README.md",
+              "RelativeDocumentMoniker": "Hivesong\\README.md",
+              "ToolTip": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\README.md",
+              "RelativeToolTip": "Hivesong\\README.md",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-05-13T01:12:43.042Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Hivesong",
-              "DocumentMoniker": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Hivesong.csproj",
-              "RelativeDocumentMoniker": "Hivesong\\Hivesong.csproj",
-              "ToolTip": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Hivesong.csproj",
-              "RelativeToolTip": "Hivesong\\Hivesong.csproj",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAABMAAAAyAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2024-12-27T12:31:56.443Z",
+              "Title": "Hivesong.cs",
+              "DocumentMoniker": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Charms\\Hivesong.cs",
+              "RelativeDocumentMoniker": "Hivesong\\Charms\\Hivesong.cs",
+              "ToolTip": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Charms\\Hivesong.cs",
+              "RelativeToolTip": "Hivesong\\Charms\\Hivesong.cs",
+              "ViewState": "AQIAADgAAAAAAAAAAAAMwEsAAAA1AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-11T23:54:08.491Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Hivesong.cs",
+              "DocumentMoniker": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Hivesong.cs",
+              "RelativeDocumentMoniker": "Hivesong\\Hivesong.cs",
+              "ToolTip": "C:\\Users\\danie\\OneDrive\\Documents\\GitHub\\HollowKnight.Hivesong\\Hivesong\\Hivesong.cs",
+              "RelativeToolTip": "Hivesong\\Hivesong.cs",
+              "ViewState": "AQIAAGwAAAAAAAAAAAAcwNMAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-10T02:53:50.496Z",
               "EditorCaption": ""
             }
           ]

@@ -7,6 +7,7 @@ using System.Linq;
 using UnityEngine;
 using System.Reflection;
 using SFCore.Utils;
+using HutongGames.PlayMaker;
 
 namespace Hivesong.Charms
 {
@@ -20,6 +21,8 @@ namespace Hivesong.Charms
         public override string Description => "The soft song of the Hive Queen.\n\nIncreases the damage dealt by pets.";
 
         public override int DefaultCost => 2;
+
+        private float Modifier = 0.3f;
 
         public override AbstractLocation Location()
         {
@@ -38,19 +41,18 @@ namespace Hivesong.Charms
 
         public override void ApplyEffects()
         {
-            ModHooks.HeroUpdateHook += BuffGrimmchild;
-            On.KnightHatchling.OnEnable += BuffHatchling;
+            ModHooks.ObjectPoolSpawnHook += BuffGrimmchild;
+            ModHooks.ObjectPoolSpawnHook += BuffHatchling;
             ModHooks.ColliderCreateHook += BuffWeaverlings;
             ModHooks.ObjectPoolSpawnHook += BuffFlukes;
         }
 
-        #region Grimmchild
-        private Dictionary<GameObject, Dictionary<string, int>> buffsApplied = new Dictionary<GameObject, Dictionary<string, int>>();
-
         /// <summary>
-        /// Increases the Grimmchild's damage.
+        /// Increases the damage dealt by Grimmchild
         /// </summary>
-        private void BuffGrimmchild()
+        /// <param name="gameObject"></param>
+        /// <returns></returns>
+        private GameObject BuffGrimmchild(GameObject gameObject)
         {
             // Grimmchild attacks by creating Grimmball projectiles
             // I could not figure out where Grimmball stores its damage
@@ -58,103 +60,56 @@ namespace Hivesong.Charms
             // However, I did learn that Grimmchild stores its damage values in its Control FSM as states
             // So this mod will modify those damage states instead
 
-            List<GameObject> gameObjects = FindObjectsOfType<GameObject>()
-                                            .Where(x => x.name.StartsWith("Grimmchild"))
-                                            .ToList();
-            foreach (GameObject gameObject in gameObjects)
+            // Only buff clones of the original
+            if (IsEquipped() &&
+                gameObject.name.Equals("Grimmchild(Clone)"))
             {
-                // Have we buffed this Grimmchild already?
-                bool isBuffed = buffsApplied.ContainsKey(gameObject);
-                
-                // Skip if already buffed and charm equipped, or if not buffed and charm not equipped
-                if (isBuffed == IsEquipped())
-                {
-                    continue;
-                }
+                //SharedData.Log($"Grimmchild found: {gameObject.name}");
 
                 PlayMakerFSM fsm = FSMUtility.LocateFSM(gameObject, "Control");
 
-                // If Grimmchild is not buffed, then buff it. Otherwise, debuff it
-                if (!isBuffed)
+                string[] states = new string[] { "Level 2", "Level 3", "Level 4" };
+                foreach (string state in states)
                 {
-                    Dictionary<string, int> bonusDamageList = new Dictionary<string, int>();
+                    // Get base damage
+                    HutongGames.PlayMaker.FsmInt fsmDamage = fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue;
+                    int baseDamage = fsmDamage.Value;
 
-                    // Skip level 1 because the Grimmchild doesn't attack at level 1
-                    string[] states = new string[] { "Level 2", "Level 3", "Level 4" };
-                    foreach (string state in states)
-                    {
-                        // Get base damage
-                        HutongGames.PlayMaker.FsmInt fsmDamage = fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue;
-                        int baseDamage = fsmDamage.Value;
+                    // Get bonus damage
+                    int bonusDamage = GetBonusDamage(baseDamage);
 
-                        // Get bonus damage
-                        int bonusDamage = GetBonusDamage(baseDamage);
-
-                        // Apply bonus damage
-                        fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value += bonusDamage;
-                        //SharedData.Log($"Grimmchild {state} buffed: {baseDamage} -> {baseDamage + bonusDamage}");
-
-                        // Add bonus damage to list
-                        bonusDamageList.Add(state, bonusDamage);
-                    }
-
-                    // Add Grimmchild to list of buffed pets
-                    buffsApplied.Add(gameObject, bonusDamageList);
-                }
-                else
-                {
-                    Dictionary<string, int> bonusDamageList = buffsApplied[gameObject];
-                    foreach (string state in bonusDamageList.Keys)
-                    {
-                        // Get current and bonus damage
-                        int currentDamage = fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value;
-                        int bonusDamage = bonusDamageList[state];
-
-                        // Remove bonus damage, for a minimum damage of 0
-                        fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value = Math.Max(currentDamage - bonusDamage, 0);
-                        //SharedData.Log($"Grimmchild {state} debuffed: {currentDamage} -> {fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value}");
-                    }
-
-                    // Remove Grimmchild from list of buffed pets
-                    buffsApplied.Remove(gameObject);
+                    // Apply bonus damage
+                    fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value += bonusDamage;
+                    //SharedData.Log($"Grimmchild {state} buffed: {baseDamage} -> {baseDamage + bonusDamage}");
                 }
             }
+
+            return gameObject;
         }
-        #endregion
 
-        #region Glowing Womb
-        private List<KnightHatchling> buffedHatchlings = new List<KnightHatchling>();
-
-        /// <summary>
-        /// Increases the Knight Hatchling's damage
-        /// </summary>
-        /// <param name="orig"></param>
-        /// <param name="self"></param>
-        private void BuffHatchling(On.KnightHatchling.orig_OnEnable orig, KnightHatchling self)
+        private GameObject BuffHatchling(GameObject gameObject)
         {
-            // The Dung Defender charm is only applied when a Hatchling is created, so the Hivesong charm will
-            //  also be applied when a Hatchling is made (and never un-applied)
-
-            // This event gets called when entering a new area, so make sure not to buff a hatchling more than once
-            if (IsEquipped() && !buffedHatchlings.Contains(self))
+            if (IsEquipped() &&
+                gameObject.name.Equals("Knight Hatchling(Clone)"))
             {
-                // Normal Damage
-                int normal = self.normalDetails.damage;
-                int bonusDamage = GetBonusDamage(normal);
-                self.normalDetails.damage = normal + bonusDamage;
+                // Knight Hatchling damage is stored in the KnightHatchling component
+                KnightHatchling component = gameObject.GetComponent<KnightHatchling>();
 
-                // Dung Defender Damage
-                int dung = self.dungDetails.damage;
-                bonusDamage = GetBonusDamage(dung);
-                self.dungDetails.damage = dung + bonusDamage;
+                // Normal damage
+                int baseDamage = component.normalDetails.damage;
+                int bonusDamage = GetBonusDamage(baseDamage);
+                component.normalDetails.damage += bonusDamage;
+                //SharedData.Log($"Hatchling Normal: {baseDamage} -> {baseDamage + bonusDamage}");
 
-                buffedHatchlings.Add(self);
-                //SharedData.Log($"Hatchling buffed: {normal} -> {self.normalDetails.damage}, {dung} -> {self.dungDetails.damage}");
+                // Dung damage
+                baseDamage = component.dungDetails.damage;
+                bonusDamage = GetBonusDamage(baseDamage);
+                component.dungDetails.damage += bonusDamage;
+                //SharedData.Log($"Hatchling Dung: {baseDamage} -> {baseDamage + bonusDamage}");
             }
 
-            orig(self);
+            return gameObject;
         }
-        #endregion
 
         /// <summary>
         /// Increases the Weaverling's damage
@@ -164,11 +119,11 @@ namespace Hivesong.Charms
         {
             // Weaverling damage is stored in a hitbox
             // This method is called when that hitbox is made, so we can set the damage here
-            //  without having to remove it later, unlike with the Grimmchild
+            //  without having to remove it later
 
             if (gameObject.name == "Enemy Damager" &&
                 gameObject.transform.parent != null &&
-                gameObject.transform.parent.name.StartsWith("Weaverling") &&
+                gameObject.transform.parent.name.Equals("Weaverling(Clone)") &&
                 IsEquipped())
             {
                 PlayMakerFSM fsm = FSMUtility.LocateFSM(gameObject, "Attack");
@@ -189,35 +144,66 @@ namespace Hivesong.Charms
             // Spell Flukes die pretty fast, so we don't really need to worry about
             //  removing the bonus damage if the player removes the charm after
             //  casting the spell
-
-            if (gameObject.name.StartsWith("Spell Fluke") && 
-                IsEquipped())
+            if (IsEquipped() &&
+                gameObject.name.StartsWith("Spell Fluke") &&
+                gameObject.name.Contains("Clone")) // Only modify clones
             {
-                SpellFluke fluke = gameObject.GetComponent<SpellFluke>();
+                //SharedData.Log($"Fluke found: {gameObject.name}");
+                if (gameObject.name.Contains("Dung"))
+                {
+                    // At Lv 1, the Dung Fluke stores the dung cloud at step 8 of the Blow state in its Control FSM
+                    int step = 8;
+                    if (gameObject.name.Contains("Lv2")) // At level 2, the dung cloud is stored in step 10
+                    {
+                        step = 10;
+                    }
 
-                // Fluke damage is stored in a private variable, so we need to
-                //  get the field the variable is stored in
-                FieldInfo damageField = fluke.GetType().GetField("damage", BindingFlags.NonPublic | BindingFlags.Instance);
-                int baseDamage = (int)damageField.GetValue(fluke);
+                    // Get the Dung Fluke's Control FSM
+                    PlayMakerFSM fsm = FSMUtility.LocateFSM(gameObject, "Control");
 
-                int bonusDamage = GetBonusDamage(baseDamage);
-                damageField.SetValue(fluke, baseDamage + bonusDamage);
-                //SharedData.Log($"Fluke buffed: {baseDamage} -> {baseDamage + bonusDamage}");
+                    // Get the dung cloud object from the Blow state
+                    FsmOwnerDefault fsmDungCloudOwner = fsm.GetAction<HutongGames.PlayMaker.Actions.ActivateGameObject>("Blow", step).gameObject;
+                    FsmGameObject fsmDungCloud = fsmDungCloudOwner.GameObject;
+                    GameObject dungCloudPrefab = fsmDungCloud.Value;
+                    //SharedData.Log($"Dung Cloud Prefab found: {dungCloudPrefab.name}");
+
+                    // We can't easily control how much damage the dung cloud does, but
+                    // we CAN increase its damage rate, which is more reliable anyway
+                    dungCloudPrefab.GetComponent<DamageEffectTicker>().damageInterval *= 1 - Modifier;
+
+                    // Then we just have to put the modified dung cloud back into the FSM
+                    fsmDungCloud.Value = dungCloudPrefab;
+                    fsmDungCloudOwner.GameObject = fsmDungCloud;
+                    fsm.GetAction<HutongGames.PlayMaker.Actions.ActivateGameObject>("Blow", step).gameObject = fsmDungCloudOwner;
+                }
+                else
+                {
+                    SpellFluke fluke = gameObject.GetComponent<SpellFluke>();
+
+                    // Fluke damage is stored in a private variable, so we need to
+                    //  get the field the variable is stored in
+                    FieldInfo damageField = fluke.GetType().GetField("damage", BindingFlags.NonPublic | BindingFlags.Instance);
+                    int baseDamage = (int)damageField.GetValue(fluke);
+
+                    int bonusDamage = GetBonusDamage(baseDamage);
+                    damageField.SetValue(fluke, baseDamage + bonusDamage);
+                    //SharedData.Log($"Fluke buffed: {baseDamage} -> {baseDamage + bonusDamage}");
+                }
             }
 
             return gameObject;
         }
 
         /// <summary>
-        /// Hivesong increases the base damage by 30% (minimum 1)
+        /// Hivesong increases pet damage by 30% (minimum 1)
         /// </summary>
         /// <param name="baseDamage"></param>
         /// <returns></returns>
         private int GetBonusDamage(int baseDamage)
         {
-            float multiplier = 0.3f;
+            float newDamage = baseDamage * Modifier;
 
-            return Math.Max((int)(baseDamage * multiplier), 1);
+            return Math.Max((int)newDamage, 1);
         }
     }
 }
