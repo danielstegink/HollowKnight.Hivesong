@@ -13,7 +13,7 @@ namespace Hivesong
 {
     public class Hivesong : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.0.0.0";
+        public override string GetVersion() => "1.1.0.0";
 
         #region Save Data
         /// <summary>
