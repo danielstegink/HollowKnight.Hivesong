@@ -8,11 +8,11 @@
     <!--<DocumentationFile>$(OutputPath)/$(AssemblyTitle).xml</DocumentationFile>-->
   </PropertyGroup>
   <PropertyGroup>
-    <RootNamespace>DivineFury</RootNamespace>
-    <AssemblyName>DivineFury</AssemblyName>
+    <RootNamespace>Hivesong</RootNamespace>
+    <AssemblyName>Hivesong</AssemblyName>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyTitle>DivineFury</AssemblyTitle>
-    <Product>DivineFury</Product>
+    <AssemblyTitle>Hivesong</AssemblyTitle>
+    <Product>Hivesong</Product>
     <Description>A Hollow Knight Mod</Description>
     <Copyright>Copyright ©  2024</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -52,10 +52,12 @@
     <WriteLinesToFile File="$(ExportDir)/$(TargetName)/SHA.txt" Lines="$(OutputFileString);@(FilesWithHashes->'%(FileHash)');$(OutputZipString);@(ZipFilesWithHashes->'%(FileHash)')" Overwrite="true" Encoding="UTF-8" />
   </Target>
   <ItemGroup>
-    <None Remove="Resources\DivineFury.png" />
+    <None Remove="Resources\Hivesong.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\DivineFury.png" />
+    <EmbeddedResource Include="Resources\Hivesong.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">

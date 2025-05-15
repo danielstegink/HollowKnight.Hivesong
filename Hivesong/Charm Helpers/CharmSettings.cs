@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DivineFury
+namespace Hivesong
 {
     /// <summary>
     /// Holds charm-related info we want to store in the save file

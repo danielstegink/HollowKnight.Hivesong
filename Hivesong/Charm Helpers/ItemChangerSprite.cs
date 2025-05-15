@@ -5,7 +5,7 @@ using System.IO;
 using System.Reflection;
 using UnityEngine;
 
-namespace DivineFury
+namespace Hivesong
 {
     /// <summary>
     /// Image (sprite) of the charm. Used by ItemChanger when placing the
