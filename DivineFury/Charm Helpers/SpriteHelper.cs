@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using UnityEngine;
 
-namespace Hivesong
+namespace DivineFury
 {
     public static class SpriteHelper
     {
@@ -14,7 +14,10 @@ namespace Hivesong
         public static Sprite Get(string spriteFileName)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
-            using (Stream stream = assembly.GetManifestResourceStream($"Hivesong.Resources.{spriteFileName}.png"))
+            string[] manifestedResourceNames = assembly.GetManifestResourceNames();
+            SharedData.Log(string.Join(",", manifestedResourceNames));
+
+            using (Stream stream = assembly.GetManifestResourceStream($"DivineFury.Resources.{spriteFileName}.png"))
             {
                 // Convert stream to bytes
                 byte[] bytes = new byte[stream.Length];

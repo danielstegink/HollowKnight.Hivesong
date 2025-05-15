@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-namespace Hivesong
+namespace DivineFury
 {
     /// <summary>
     /// Template class for charms created by this mod
@@ -20,11 +20,6 @@ namespace Hivesong
         public abstract string Description { get; }
 
         /// <summary>
-        /// Default cost of the charm
-        /// </summary>
-        public abstract int DefaultCost { get; }
-
-        /// <summary>
         /// Numeric ID indicating the charm's position in the game's charm list. Assigned 
         /// by the mod at startup
         /// </summary>
@@ -35,6 +30,11 @@ namespace Hivesong
         /// </summary>
         /// <returns></returns>
         public abstract AbstractLocation Location();
+
+        /// <summary>
+        /// Sprite for the charm icon
+        /// </summary>
+        public Sprite Sprite { get; set; }
 
         /// <summary>
         /// Specially formatted version of the name. Used as a key for
