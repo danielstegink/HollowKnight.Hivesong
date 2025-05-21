@@ -4,7 +4,7 @@ This mod adds a new charm to Hollow Knight, Hivesong, which increases the damage
 
 This charm can be acquired via DebugMod.
 
-# Patch Notes
+## Patch Notes
 1.1.0.1
 -	Added note to README
 
