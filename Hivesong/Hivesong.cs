@@ -13,7 +13,7 @@ namespace Hivesong
 {
     public class Hivesong : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.1.0.0";
+        public override string GetVersion() => "1.1.0.1";
 
         #region Save Data
         /// <summary>
@@ -59,7 +59,7 @@ namespace Hivesong
             SharedData.Log("Initializing Mod.");
 
             // Adding mod hooks (effects that should be run at certain points in the game)\
-            SharedData.Log("Applying hooks");
+            //SharedData.Log("Applying hooks");
             ModHooks.LanguageGetHook += GetCharmText;
             ModHooks.GetPlayerBoolHook += ReadCharmBools;
             ModHooks.SetPlayerBoolHook += WriteCharmBools;
@@ -71,9 +71,9 @@ namespace Hivesong
             {
                 AddToGiveAllCharms(GiveCharms);
             }
-            SharedData.Log("Hooks applied");
+            //SharedData.Log("Hooks applied");
 
-            SharedData.Log("Initializing charms");
+            //SharedData.Log("Initializing charms");
             foreach (Charm charm in charms)
             {
                 // Add the charm to the charm list and get its new ID number
@@ -123,9 +123,9 @@ namespace Hivesong
                 Finder.DefineCustomItem(item);
                 Finder.DefineCustomLocation(charm.Location());
             }
-            SharedData.Log("Charms initialized");
+            //SharedData.Log("Charms initialized");
 
-            SharedData.Log("Mod initialized");
+            //SharedData.Log("Mod initialized");
         }
 
         #region Charm Data and Settings
