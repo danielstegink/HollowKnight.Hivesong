@@ -31,5 +31,7 @@ namespace Hivesong
         {
             { SharedData.hivesong.InternalName(), SharedData.hivesong.DefaultCost }
         };
+
+        public bool charmUpgraded = false;
     }
 }

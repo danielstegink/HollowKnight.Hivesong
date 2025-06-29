@@ -42,7 +42,11 @@ namespace Hivesong.Charms
         /// <summary>
         /// Whether or not the charm has been upgraded (see Exaltation Expanded)
         /// </summary>
-        public bool IsUpgraded = false;
+        public bool IsUpgraded()
+        {
+            return SharedData.localSaveData.charmUpgraded &&
+                    SharedData.exaltationInstalled;
+        }
 
         #region Get Data
         /// <summary>
@@ -51,7 +55,7 @@ namespace Hivesong.Charms
         /// <returns></returns>
         private string GetName()
         {
-            if (!IsUpgraded)
+            if (!IsUpgraded())
             {
                 return "Hivesong";
             }
@@ -67,7 +71,7 @@ namespace Hivesong.Charms
         /// <returns></returns>
         private string GetDescription()
         {
-            if (!IsUpgraded)
+            if (!IsUpgraded())
             {
                 return "The soft song of the Hive Queen.\n\n" +
                         "Increases the damage dealt by pets.";
@@ -259,7 +263,7 @@ namespace Hivesong.Charms
         private float GetModifier()
         {
             float modifier = 0.3f;
-            if (IsUpgraded)
+            if (IsUpgraded())
             {
                 modifier = 0.4f;
             }

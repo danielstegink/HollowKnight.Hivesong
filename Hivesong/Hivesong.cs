@@ -16,17 +16,11 @@ namespace Hivesong
         public override string GetVersion() => "1.2.0.0";
 
         #region Save Data
-        /// <summary>
-        /// Data for the save file
-        /// </summary>
-        private static LocalSaveData localSaveData { get; set; } = new LocalSaveData();
+        public void OnLoadLocal(LocalSaveData s) => SharedData.localSaveData = s;
 
-        public void OnLoadLocal(LocalSaveData s) => localSaveData = s;
-
-        public LocalSaveData OnSaveLocal() => localSaveData;
+        public LocalSaveData OnSaveLocal() => SharedData.localSaveData;
         #endregion
 
-        private bool exaltationInstalled = false;
         private Sprite upgradedSprite = null;
 
         public Hivesong() : base("Hivesong") { }
@@ -44,7 +38,6 @@ namespace Hivesong
             ModHooks.SetPlayerBoolHook += SetCharmBools;
             ModHooks.GetPlayerIntHook += GetCharmCosts;
             On.GameManager.EnterHero += OnEnterHero;
-            ModHooks.SavegameLoadHook += NewGame;
             ModHooks.SavegameSaveHook += SaveGame;
             On.CharmIconList.GetSprite += GetSprite;
 
@@ -71,7 +64,7 @@ namespace Hivesong
             if (ModHooks.GetMod("Exaltation") != null &&
                 ModHooks.GetMod("ExaltationExpanded") != null)
             {
-                exaltationInstalled = true;
+                SharedData.exaltationInstalled = true;
             }
         }
 
@@ -148,15 +141,15 @@ namespace Hivesong
             string charmName = SharedData.hivesong.InternalName();
             if (name.Equals($"gotCharm_{SharedData.hivesong.Num}"))
             {
-                return localSaveData.charmFound[charmName];
+                return SharedData.localSaveData.charmFound[charmName];
             }
             else if (name.Equals($"equippedCharm_{SharedData.hivesong.Num}"))
             {
-                return localSaveData.charmEquipped[charmName];
+                return SharedData.localSaveData.charmEquipped[charmName];
             }
             else if (name.Equals($"newCharm_{SharedData.hivesong.Num}"))
             {
-                return localSaveData.charmNew[charmName];
+                return SharedData.localSaveData.charmNew[charmName];
             }
 
             return orig;
@@ -173,15 +166,15 @@ namespace Hivesong
             string charmName = SharedData.hivesong.InternalName();
             if (name.Equals($"gotCharm_{SharedData.hivesong.Num}"))
             {
-                localSaveData.charmFound[charmName] = orig;
+                SharedData.localSaveData.charmFound[charmName] = orig;
             }
             else if (name.Equals($"equippedCharm_{SharedData.hivesong.Num}"))
             {
-                localSaveData.charmEquipped[charmName] = orig;
+                SharedData.localSaveData.charmEquipped[charmName] = orig;
             }
             else if (name.Equals($"newCharm_{SharedData.hivesong.Num}"))
             {
-                localSaveData.charmNew[charmName] = orig;
+                SharedData.localSaveData.charmNew[charmName] = orig;
             }
 
             return orig;
@@ -198,7 +191,7 @@ namespace Hivesong
             string charmName = SharedData.hivesong.InternalName();
             if (name.Equals($"charmCost_{SharedData.hivesong.Num}"))
             {
-                return localSaveData.charmCost[charmName];
+                return SharedData.localSaveData.charmCost[charmName];
             }
 
             return orig;
@@ -215,7 +208,7 @@ namespace Hivesong
         {
             // If the charm has been upgraded, get the upgraded version's sprite instead
             if (id == SharedData.hivesong.Num &&
-                SharedData.hivesong.IsUpgraded)
+                SharedData.hivesong.IsUpgraded())
             {
                 return upgradedSprite;
             }
@@ -225,41 +218,14 @@ namespace Hivesong
         #endregion
 
         /// <summary>
-        /// Reset exaltation when a new save is loaded
-        /// </summary>
-        /// <param name="obj"></param>
-        private void NewGame(int obj)
-        {
-            SharedData.hivesong.IsUpgraded = false;
-        }
-
-        /// <summary>
-        /// Upon saving, if Exaltation Expanded is active, upgrade Hivesong if it
-        /// is eligible.
+        /// Upon saving, upgrade Hivesong if it is eligible.
         /// </summary>
         /// <param name="obj"></param>
         /// <exception cref="NotImplementedException"></exception>
         private void SaveGame(int obj)
         {
-            // Confirm Exaltation Expanded is installed
-            if (!exaltationInstalled)
-            {
-                return;
-            }
-
-            // Confirm Hivesong has been acquired
-            if (!localSaveData.charmFound[SharedData.hivesong.InternalName()])
-            {
-                return;
-            }
-
             // Confirm ascended Hive Knight has been bested
-            if (!PlayerData.instance.statueStateHiveKnight.completedTier2)
-            {
-                return;
-            }
-
-            SharedData.hivesong.IsUpgraded = true;
+            SharedData.localSaveData.charmUpgraded = PlayerData.instance.statueStateHiveKnight.completedTier2;
         }
 
         #region Charm Placement
@@ -284,7 +250,7 @@ namespace Hivesong
             ItemChangerMod.CreateSettingsProfile(false, false);
 
             string charmName = SharedData.hivesong.InternalName();
-            if (!localSaveData.charmFound[charmName])
+            if (!SharedData.localSaveData.charmFound[charmName])
             {
                 List<AbstractPlacement> placements = new List<AbstractPlacement>();
 
@@ -332,7 +298,7 @@ namespace Hivesong
         /// </summary>
         private void GiveCharms()
         {
-            localSaveData.charmFound[SharedData.hivesong.InternalName()] = true;
+            SharedData.localSaveData.charmFound[SharedData.hivesong.InternalName()] = true;
         }
         #endregion
     }

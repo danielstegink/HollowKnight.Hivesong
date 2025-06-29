@@ -7,6 +7,11 @@
     {
         public static Charms.Hivesong hivesong = new Charms.Hivesong();
 
+        /// <summary>
+        /// Data for the save file
+        /// </summary>
+        public static LocalSaveData localSaveData { get; set; } = new LocalSaveData();
+
         private static Hivesong _logger = new Hivesong();
 
         /// <summary>
@@ -17,5 +22,7 @@
         {
             _logger.Log(message);
         }
+
+        public static bool exaltationInstalled = false;
     }
 }
