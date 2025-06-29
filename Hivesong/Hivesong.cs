@@ -13,7 +13,7 @@ namespace Hivesong
 {
     public class Hivesong : Mod, IMod, ILocalSettings<LocalSaveData>
     {
-        public override string GetVersion() => "1.1.0.1";
+        public override string GetVersion() => "1.2.0.0";
 
         #region Save Data
         /// <summary>
@@ -26,28 +26,8 @@ namespace Hivesong
         public LocalSaveData OnSaveLocal() => localSaveData;
         #endregion
 
-        #region Variables
-        /// <summary>
-        /// A list of all added charms.
-        /// </summary>
-        private readonly static List<Charm> charms = new List<Charm>()
-        {
-            SharedData.hivesong
-        };
-
-        private readonly Dictionary<string, int> charmCosts = new Dictionary<string, int>();
-
-        private readonly Dictionary<(string key, string sheet), string> charmTextData = new Dictionary<(string key, string sheet), string>();
-
-        /// <summary>
-        /// Needs to be a function so that the game can retrieve the save data dynamically
-        /// </summary>
-        private readonly Dictionary<string, Func<bool, bool>> charmBoolValues = new Dictionary<string, Func<bool, bool>>();
-
-        private readonly Dictionary<string, Action<bool>> UpdateCharmBool = new Dictionary<string, Action<bool>>();
-
-        private readonly Dictionary<string, int> charmIds = new Dictionary<string, int>();
-        #endregion
+        private bool exaltationInstalled = false;
+        private Sprite upgradedSprite = null;
 
         public Hivesong() : base("Hivesong") { }
 
@@ -58,157 +38,229 @@ namespace Hivesong
         {
             SharedData.Log("Initializing Mod.");
 
-            // Adding mod hooks (effects that should be run at certain points in the game)\
-            //SharedData.Log("Applying hooks");
+            // Add mod hooks (effects that should be run at certain points in the game)\
             ModHooks.LanguageGetHook += GetCharmText;
-            ModHooks.GetPlayerBoolHook += ReadCharmBools;
-            ModHooks.SetPlayerBoolHook += WriteCharmBools;
-            ModHooks.GetPlayerIntHook += ReadCharmCosts;
+            ModHooks.GetPlayerBoolHook += GetCharmBools;
+            ModHooks.SetPlayerBoolHook += SetCharmBools;
+            ModHooks.GetPlayerIntHook += GetCharmCosts;
             On.GameManager.EnterHero += OnEnterHero;
-            //On.PlayerData.CountCharms += CountOurCharms;
+            ModHooks.SavegameLoadHook += NewGame;
+            ModHooks.SavegameSaveHook += SaveGame;
+            On.CharmIconList.GetSprite += GetSprite;
 
+            // Link supported mods
+            GetOtherMods();
+
+            // Define charm and link to ItemChanger
+            AddCharmToGame();
+
+            SharedData.Log("Mod initialized");
+        }
+
+        #region Initialize Helpers
+        /// <summary>
+        /// Checks if supported mods are installed
+        /// </summary>
+        private void GetOtherMods()
+        {
             if (ModHooks.GetMod("DebugMod") != null)
             {
                 AddToGiveAllCharms(GiveCharms);
             }
-            //SharedData.Log("Hooks applied");
 
-            //SharedData.Log("Initializing charms");
-            foreach (Charm charm in charms)
+            if (ModHooks.GetMod("Exaltation") != null &&
+                ModHooks.GetMod("ExaltationExpanded") != null)
             {
-                // Add the charm to the charm list and get its new ID number
-                Sprite sprite = SpriteHelper.Get(charm.InternalName());
-                int charmId = CharmHelper.AddSprites(new Sprite[] { sprite })[0];
-                charm.Num = charmId;
-                charmIds[charm.Name] = charmId;
-                SharedData.Log($"Sprite found for {charm.Name}. ID assigned: {charmId}");
-
-                // Store charm data in save settings
-                string key = charm.InternalName();
-                charmCosts[$"charmCost_{charmId}"] = localSaveData.charmCost[key];
-
-                WriteCharmText($"CHARM_NAME_{charmId}", "UI", charm.Name);
-                WriteCharmText($"CHARM_DESC_{charmId}", "UI", charm.Description);
-
-                charmBoolValues[$"gotCharm_{charmId}"] = _ => localSaveData.charmFound[key];
-                charmBoolValues[$"equippedCharm_{charmId}"] = _ => localSaveData.charmEquipped[key];
-                charmBoolValues[$"newCharm_{charmId}"] = _ => localSaveData.charmNew[key];
-
-                UpdateCharmBool[$"gotCharm_{charmId}"] = value => localSaveData.charmFound[key] = value;
-                UpdateCharmBool[$"equippedCharm_{charmId}"] = value => localSaveData.charmEquipped[key] = value;
-                UpdateCharmBool[$"newCharm_{charmId}"] = value => localSaveData.charmNew[key] = value;
-
-                // Apply charm effects
-                charm.ApplyEffects();
-
-                // Tag the item for ConnectionMetadataInjector, so that MapModS and other mods recognize the items we're adding as charms.
-                var item = new ItemChanger.Items.CharmItem()
-                {
-                    charmNum = charm.Num,
-                    name = charm.InternalName(),
-                    UIDef = new MsgUIDef()
-                    {
-                        name = new LanguageString("UI", $"CHARM_NAME_{charm.Num}"),
-                        shopDesc = new LanguageString("UI", $"CHARM_DESC_{charm.Num}"),
-                        sprite = new ItemChangerSprite(charm.InternalName(), sprite)
-                    }
-                };
-
-                var mapModTag = item.AddTag<InteropTag>();
-                mapModTag.Message = "RandoSupplementalMetadata";
-                mapModTag.Properties["ModSource"] = GetName();
-                mapModTag.Properties["PoolGroup"] = "Charms";
-
-                // Add the charm and its location to ItemChanger for placement
-                Finder.DefineCustomItem(item);
-                Finder.DefineCustomLocation(charm.Location());
+                exaltationInstalled = true;
             }
-            //SharedData.Log("Charms initialized");
-
-            //SharedData.Log("Mod initialized");
         }
+
+        /// <summary>
+        /// Adds charm to game
+        /// </summary>
+        private void AddCharmToGame()
+        {
+            // Add the charm to the charm list and get its new ID number
+            Sprite sprite = SpriteHelper.Get(SharedData.hivesong.InternalName());
+            int charmId = CharmHelper.AddSprites(new Sprite[] { sprite })[0];
+            SharedData.hivesong.Num = charmId;
+            SharedData.Log($"Sprite found for {SharedData.hivesong.Name}. ID assigned: {charmId}");
+
+            // Get exalted version too, in case we need it
+            upgradedSprite = SpriteHelper.Get("RoyalDecree");
+
+            // Apply charm effects
+            SharedData.hivesong.ApplyEffects();
+
+            // Add the charm and its location to ItemChanger for placement
+            var item = new ItemChanger.Items.CharmItem()
+            {
+                charmNum = SharedData.hivesong.Num,
+                name = SharedData.hivesong.InternalName(),
+                UIDef = new MsgUIDef()
+                {
+                    name = new LanguageString("UI", $"CHARM_NAME_{SharedData.hivesong.Num}"),
+                    shopDesc = new LanguageString("UI", $"CHARM_DESC_{SharedData.hivesong.Num}"),
+                    sprite = new ItemChangerSprite(SharedData.hivesong.InternalName(), sprite)
+                }
+            };
+
+            var mapModTag = item.AddTag<InteropTag>();
+            mapModTag.Message = "RandoSupplementalMetadata";
+            mapModTag.Properties["ModSource"] = GetName();
+            mapModTag.Properties["PoolGroup"] = "Charms";
+
+            Finder.DefineCustomItem(item);
+            Finder.DefineCustomLocation(SharedData.hivesong.Location());
+        }
+        #endregion
 
         #region Charm Data and Settings
         /// <summary>
         /// Gets text data related to the charms (name and description)
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="sheetName"></param>
+        /// <param name="sheetTitle"></param>
         /// <param name="orig"></param>
         /// <returns></returns>
-        private string GetCharmText(string key, string sheetName, string orig)
+        private string GetCharmText(string key, string sheetTitle, string orig)
         {
-            if (charmTextData.ContainsKey((key, sheetName)))
+            if (key.Equals($"CHARM_NAME_{SharedData.hivesong.Num}"))
             {
-                return charmTextData[(key, sheetName)];
+                return SharedData.hivesong.Name;
+            }
+            else if (key.Equals($"CHARM_DESC_{SharedData.hivesong.Num}"))
+            {
+                return SharedData.hivesong.Description;
             }
 
             return orig;
         }
 
         /// <summary>
-        /// Stores charm text such as names and descriptions
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="sheetName"></param>
-        /// <param name="text"></param>
-        internal void WriteCharmText(string key, string sheetName, string text)
-        {
-            charmTextData.Add((key, sheetName), text);
-        }
-
-        /// <summary>
         /// Gets boolean values related to the charms (equipped, new, found)
         /// </summary>
-        /// <param name="charmBoolKey"></param>
-        /// <param name="defaultValue"></param>
+        /// <param name="name"></param>
+        /// <param name="orig"></param>
         /// <returns></returns>
-        private bool ReadCharmBools(string charmBoolKey, bool defaultValue)
+        private bool GetCharmBools(string name, bool orig)
         {
-            bool value = defaultValue;
-
-            if (charmBoolValues.ContainsKey(charmBoolKey))
+            string charmName = SharedData.hivesong.InternalName();
+            if (name.Equals($"gotCharm_{SharedData.hivesong.Num}"))
             {
-                value = charmBoolValues[charmBoolKey](defaultValue);
+                return localSaveData.charmFound[charmName];
+            }
+            else if (name.Equals($"equippedCharm_{SharedData.hivesong.Num}"))
+            {
+                return localSaveData.charmEquipped[charmName];
+            }
+            else if (name.Equals($"newCharm_{SharedData.hivesong.Num}"))
+            {
+                return localSaveData.charmNew[charmName];
             }
 
-            return value;
+            return orig;
         }
 
         /// <summary>
         /// Sets boolean values related to charms (equipped, new, found)
         /// </summary>
-        /// <param name="charmBoolKey"></param>
-        /// <param name="defaultValue"></param>
+        /// <param name="name"></param>
+        /// <param name="orig"></param>
         /// <returns></returns>
-        private bool WriteCharmBools(string charmBoolKey, bool defaultValue)
+        private bool SetCharmBools(string name, bool orig)
         {
-            if (UpdateCharmBool.ContainsKey(charmBoolKey))
+            string charmName = SharedData.hivesong.InternalName();
+            if (name.Equals($"gotCharm_{SharedData.hivesong.Num}"))
             {
-                UpdateCharmBool[charmBoolKey](defaultValue);
+                localSaveData.charmFound[charmName] = orig;
+            }
+            else if (name.Equals($"equippedCharm_{SharedData.hivesong.Num}"))
+            {
+                localSaveData.charmEquipped[charmName] = orig;
+            }
+            else if (name.Equals($"newCharm_{SharedData.hivesong.Num}"))
+            {
+                localSaveData.charmNew[charmName] = orig;
             }
 
-            return defaultValue;
+            return orig;
         }
 
         /// <summary>
         /// Gets the costs of charms
         /// </summary>
-        /// <param name="charmCostKey"></param>
+        /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        private int ReadCharmCosts(string charmCostKey, int defaultValue)
+        private int GetCharmCosts(string name, int orig)
         {
-            if (charmCosts.ContainsKey(charmCostKey))
+            string charmName = SharedData.hivesong.InternalName();
+            if (name.Equals($"charmCost_{SharedData.hivesong.Num}"))
             {
-                return charmCosts[charmCostKey];
+                return localSaveData.charmCost[charmName];
             }
-            else
+
+            return orig;
+        }
+
+        /// <summary>
+        /// Gets the charm's sprite
+        /// </summary>
+        /// <param name="orig"></param>
+        /// <param name="self"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private Sprite GetSprite(On.CharmIconList.orig_GetSprite orig, CharmIconList self, int id)
+        {
+            // If the charm has been upgraded, get the upgraded version's sprite instead
+            if (id == SharedData.hivesong.Num &&
+                SharedData.hivesong.IsUpgraded)
             {
-                return defaultValue;
+                return upgradedSprite;
             }
+
+            return orig(self, id);
         }
         #endregion
+
+        /// <summary>
+        /// Reset exaltation when a new save is loaded
+        /// </summary>
+        /// <param name="obj"></param>
+        private void NewGame(int obj)
+        {
+            SharedData.hivesong.IsUpgraded = false;
+        }
+
+        /// <summary>
+        /// Upon saving, if Exaltation Expanded is active, upgrade Hivesong if it
+        /// is eligible.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void SaveGame(int obj)
+        {
+            // Confirm Exaltation Expanded is installed
+            if (!exaltationInstalled)
+            {
+                return;
+            }
+
+            // Confirm Hivesong has been acquired
+            if (!localSaveData.charmFound[SharedData.hivesong.InternalName()])
+            {
+                return;
+            }
+
+            // Confirm ascended Hive Knight has been bested
+            if (!PlayerData.instance.statueStateHiveKnight.completedTier2)
+            {
+                return;
+            }
+
+            SharedData.hivesong.IsUpgraded = true;
+        }
 
         #region Charm Placement
         /// <summary>
@@ -219,7 +271,6 @@ namespace Hivesong
         /// <param name="additiveGateSearch"></param>
         private void OnEnterHero(On.GameManager.orig_EnterHero orig, GameManager self, bool additiveGateSearch)
         {
-            //SharedData.Log($"Scene entered: {self.sceneName}");
             PlaceCharms();
 
             orig(self, additiveGateSearch);
@@ -232,24 +283,20 @@ namespace Hivesong
         {
             ItemChangerMod.CreateSettingsProfile(false, false);
 
-            List<AbstractPlacement> placements = new List<AbstractPlacement>();
-            foreach (Charm charm in charms)
+            string charmName = SharedData.hivesong.InternalName();
+            if (!localSaveData.charmFound[charmName])
             {
-                // Only place charms player hasn't collected
-                if (!localSaveData.charmFound[charm.InternalName()])
-                {
-                    AbstractLocation location = Finder.GetLocation(charm.InternalName());
+                List<AbstractPlacement> placements = new List<AbstractPlacement>();
 
-                    AbstractPlacement placement = location.Wrap();
+                AbstractLocation location = Finder.GetLocation(charmName);
+                AbstractPlacement placement = location.Wrap();
+                AbstractItem item = Finder.GetItem(charmName);
+                placement.Add(item);
 
-                    AbstractItem item = Finder.GetItem(charm.InternalName());
-                    placement.Add(item);
-
-                    placements.Add(placement);
-                }
+                placements.Add(placement);
+                ItemChangerMod.AddPlacements(placements, PlacementConflictResolution.Replace);
             }
 
-            ItemChangerMod.AddPlacements(placements, PlacementConflictResolution.Replace);
         }
         #endregion
 
@@ -285,10 +332,7 @@ namespace Hivesong
         /// </summary>
         private void GiveCharms()
         {
-            foreach (var charm in charms)
-            {
-                localSaveData.charmFound[charm.InternalName()] = true;
-            }
+            localSaveData.charmFound[SharedData.hivesong.InternalName()] = true;
         }
         #endregion
     }

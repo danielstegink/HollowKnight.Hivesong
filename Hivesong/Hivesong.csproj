@@ -53,11 +53,13 @@
   </Target>
   <ItemGroup>
     <None Remove="Resources\Hivesong.png" />
+    <None Remove="Resources\RoyalDecree.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Hivesong.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\RoyalDecree.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -342,6 +344,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" Link="README.md" />
-    <None Include=".gitignore" />
   </ItemGroup>
 </Project>

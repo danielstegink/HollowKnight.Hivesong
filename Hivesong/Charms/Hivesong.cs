@@ -2,12 +2,11 @@
 using ItemChanger;
 using Modding;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using System.Reflection;
 using SFCore.Utils;
 using HutongGames.PlayMaker;
+using System.Collections.Generic;
 
 namespace Hivesong.Charms
 {
@@ -16,13 +15,11 @@ namespace Hivesong.Charms
     /// </summary>
     public class Hivesong : Charm
     {
-        public override string Name => "Hivesong";
+        public override string Name => GetName();
 
-        public override string Description => "The soft song of the Hive Queen.\n\nIncreases the damage dealt by pets.";
+        public override string Description => GetDescription();
 
         public override int DefaultCost => 2;
-
-        private float Modifier = 0.3f;
 
         public override AbstractLocation Location()
         {
@@ -37,8 +34,53 @@ namespace Hivesong.Charms
             };
         }
 
-        public Hivesong() { }
+        public override string InternalName()
+        {
+            return "Hivesong";
+        }
 
+        /// <summary>
+        /// Whether or not the charm has been upgraded (see Exaltation Expanded)
+        /// </summary>
+        public bool IsUpgraded = false;
+
+        #region Get Data
+        /// <summary>
+        /// Gets charm name
+        /// </summary>
+        /// <returns></returns>
+        private string GetName()
+        {
+            if (!IsUpgraded)
+            {
+                return "Hivesong";
+            }
+            else
+            {
+                return "Royal Decree";
+            }
+        }
+
+        /// <summary>
+        /// Gets charm description
+        /// </summary>
+        /// <returns></returns>
+        private string GetDescription()
+        {
+            if (!IsUpgraded)
+            {
+                return "The soft song of the Hive Queen.\n\n" +
+                        "Increases the damage dealt by pets.";
+            }
+            else
+            {
+                return "Contains the divine authority of the Pale King.\n\n" +
+                        "Greatly increases the damage dealt by pets.";
+            }
+        }
+        #endregion
+
+        #region Hooks
         public override void ApplyEffects()
         {
             ModHooks.ObjectPoolSpawnHook += BuffGrimmchild;
@@ -47,8 +89,11 @@ namespace Hivesong.Charms
             ModHooks.ObjectPoolSpawnHook += BuffFlukes;
         }
 
+        #region Grimmchild
+        private Dictionary<string, int> grimmchildValues = new Dictionary<string, int>();
+
         /// <summary>
-        /// Increases the damage dealt by Grimmchild
+        /// Increases damage dealt by Grimmchild
         /// </summary>
         /// <param name="gameObject"></param>
         /// <returns></returns>
@@ -59,13 +104,12 @@ namespace Hivesong.Charms
             //  I found a damage variable in its hitbox, but that wasn't it
             // However, I did learn that Grimmchild stores its damage values in its Control FSM as states
             // So this mod will modify those damage states instead
+            // Checking for clones doesn't prevent damage stacking, so we will store the initial values
+            //  and use them as a reference
 
-            // Only buff clones of the original
             if (IsEquipped() &&
-                gameObject.name.Equals("Grimmchild(Clone)"))
+                gameObject.name.StartsWith("Grimmchild"))
             {
-                //SharedData.Log($"Grimmchild found: {gameObject.name}");
-
                 PlayMakerFSM fsm = FSMUtility.LocateFSM(gameObject, "Control");
 
                 string[] states = new string[] { "Level 2", "Level 3", "Level 4" };
@@ -74,19 +118,33 @@ namespace Hivesong.Charms
                     // Get base damage
                     HutongGames.PlayMaker.FsmInt fsmDamage = fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue;
                     int baseDamage = fsmDamage.Value;
+                    if (!grimmchildValues.ContainsKey(state))
+                    {
+                        grimmchildValues.Add(state, baseDamage);
+                    }
+                    else
+                    {
+                        baseDamage = grimmchildValues[state];
+                    }
 
                     // Get bonus damage
                     int bonusDamage = GetBonusDamage(baseDamage);
 
                     // Apply bonus damage
-                    fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value += bonusDamage;
+                    fsm.GetAction<HutongGames.PlayMaker.Actions.SetIntValue>(state, 0).intValue.Value = baseDamage + bonusDamage;
                     //SharedData.Log($"Grimmchild {state} buffed: {baseDamage} -> {baseDamage + bonusDamage}");
                 }
             }
 
             return gameObject;
         }
+        #endregion
 
+        /// <summary>
+        /// Increases damage dealt by Glowing Womb
+        /// </summary>
+        /// <param name="gameObject"></param>
+        /// <returns></returns>
         private GameObject BuffHatchling(GameObject gameObject)
         {
             if (IsEquipped() &&
@@ -112,7 +170,7 @@ namespace Hivesong.Charms
         }
 
         /// <summary>
-        /// Increases the Weaverling's damage
+        /// Increases damage dealt by Weaversong
         /// </summary>
         /// <param name="gameObject"></param>
         private void BuffWeaverlings(GameObject gameObject)
@@ -135,7 +193,7 @@ namespace Hivesong.Charms
         }
 
         /// <summary>
-        /// Increases the Spell Fluke's damage
+        /// Increases damage dealt by Flukesong
         /// </summary>
         /// <param name="gameObject"></param>
         /// <returns></returns>
@@ -169,7 +227,7 @@ namespace Hivesong.Charms
 
                     // We can't easily control how much damage the dung cloud does, but
                     // we CAN increase its damage rate, which is more reliable anyway
-                    dungCloudPrefab.GetComponent<DamageEffectTicker>().damageInterval *= 1 - Modifier;
+                    dungCloudPrefab.GetComponent<DamageEffectTicker>().damageInterval *= 1 - GetModifier();
 
                     // Then we just have to put the modified dung cloud back into the FSM
                     fsmDungCloud.Value = dungCloudPrefab;
@@ -195,15 +253,31 @@ namespace Hivesong.Charms
         }
 
         /// <summary>
+        /// Gets damage modifier
+        /// </summary>
+        /// <returns></returns>
+        private float GetModifier()
+        {
+            float modifier = 0.3f;
+            if (IsUpgraded)
+            {
+                modifier = 0.4f;
+            }
+
+            return modifier;
+        }
+
+        /// <summary>
         /// Hivesong increases pet damage by 30% (minimum 1)
         /// </summary>
         /// <param name="baseDamage"></param>
         /// <returns></returns>
         private int GetBonusDamage(int baseDamage)
         {
-            float newDamage = baseDamage * Modifier;
+            float newDamage = baseDamage * GetModifier();
 
             return Math.Max((int)newDamage, 1);
         }
+        #endregion
     }
 }
