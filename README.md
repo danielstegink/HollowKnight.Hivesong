@@ -5,6 +5,9 @@ This mod adds a new charm to Hollow Knight, Hivesong, which increases the damage
 This charm can be acquired via the All Charms option in DebugMod or in the world (see Spoilers for location).
 
 ## Patch Notes
+1.2.1.0
+-	Bug fixes for each type of pet
+
 1.2.0.0
 -	Modified README
 -	General cleanup

@@ -1,4 +1,6 @@
-﻿namespace Hivesong
+﻿using System.Reflection;
+
+namespace Hivesong
 {
     /// <summary>
     /// Stores variables and functions used by multiple files in this project
@@ -24,5 +26,49 @@
         }
 
         public static bool exaltationInstalled = false;
+
+        /// <summary>
+        /// Gets a private field from the given input class
+        /// </summary>
+        /// <typeparam name="I"></typeparam>
+        /// <typeparam name="O"></typeparam>
+        /// <param name="input"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="isStaticOrConst"></param>
+        /// <returns></returns>
+        public static O GetField<I, O>(I input, string fieldName, bool isStaticOrConst = false)
+        {
+            BindingFlags typeFlag = BindingFlags.Instance;
+            if (isStaticOrConst)
+            {
+                typeFlag = BindingFlags.Static;
+            }
+
+            FieldInfo fieldInfo = input.GetType()
+                                       .GetField(fieldName, BindingFlags.NonPublic | typeFlag);
+            return (O)fieldInfo.GetValue(input);
+        }
+
+        /// <summary>
+        /// Sets a private field from the given input class
+        /// </summary>
+        /// <typeparam name="I"></typeparam>
+        /// <typeparam name="O"></typeparam>
+        /// <param name="input"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="value"></param>
+        /// <param name="isStaticOrConst"></param>
+        public static void SetField<I, O>(I input, string fieldName, O value, bool isStaticOrConst = false)
+        {
+            BindingFlags typeFlag = BindingFlags.Instance;
+            if (isStaticOrConst)
+            {
+                typeFlag = BindingFlags.Static;
+            }
+
+            FieldInfo fieldInfo = input.GetType()
+                                       .GetField(fieldName, BindingFlags.NonPublic | typeFlag);
+            fieldInfo.SetValue(input, value);
+        }
     }
 }
