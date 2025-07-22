@@ -110,7 +110,8 @@ namespace Hivesong.Charms
             if (self.Fsm.Name.Equals("Attack") &&
                 self.Fsm.GameObject.name.Equals("Enemy Damager") &&
                 self.Fsm.GameObject.transform.parent.gameObject.name.Contains("Grimmball") &&
-                self.State.Name.Equals("Hit"))
+                self.State.Name.Equals("Hit") &&
+                IsEquipped())
             {
                 int baseDamage = self.Fsm.GetFsmInt("Damage").Value;
                 self.Fsm.GetFsmInt("Damage").Value += GetBonusDamage(baseDamage);
@@ -139,7 +140,8 @@ namespace Hivesong.Charms
                 }
                 catch { }
 
-                if (parentName.Contains("Knight Hatchling"))
+                if (parentName.Contains("Knight Hatchling") &&
+                    IsEquipped())
                 {
                     int baseDamage = hitInstance.DamageDealt;
                     hitInstance.DamageDealt += GetBonusDamage(baseDamage);
@@ -164,7 +166,8 @@ namespace Hivesong.Charms
             if (self.Fsm.Name.Equals("Attack") &&
                 self.Fsm.GameObject.name.Equals("Enemy Damager") &&
                 self.Fsm.GameObject.transform.parent.gameObject.name.Contains("Weaverling") &&
-                self.State.Name.Equals("Hit"))
+                self.State.Name.Equals("Hit") &&
+                IsEquipped())
             {
                 baseDamage = self.Fsm.GetFsmInt("Damage").Value;
                 self.Fsm.GetFsmInt("Damage").Value += GetBonusDamage(baseDamage);
@@ -196,7 +199,8 @@ namespace Hivesong.Charms
             //  removing the bonus damage if the player removes the charm after
             //  casting the spell
             if (gameObject.name.StartsWith("Spell Fluke") &&
-               gameObject.name.Contains("Clone"))
+                gameObject.name.Contains("Clone") &&
+                IsEquipped())
             {
                 // Dung Flukes have to be handled separately
                 if (!gameObject.name.Contains("Dung"))
