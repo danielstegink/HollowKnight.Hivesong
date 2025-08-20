@@ -24,8 +24,6 @@ namespace Hivesong.Helpers
         public override string exaltedDescription => "Contains the divine authority of the Pale King.\n\n" +
                                                         "Greatly increases the damage dealt by pets.";
 
-        public override Sprite icon => SpriteHelper.Get("Hivesong");
-
         public override Sprite exaltedIcon => SpriteHelper.Get("RoyalDecree");
 
         public override int cost => 2;

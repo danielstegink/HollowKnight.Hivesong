@@ -11,7 +11,7 @@ namespace Hivesong
     {
         public static Hivesong Instance;
 
-        public override string GetVersion() => "1.3.0.0";
+        public override string GetVersion() => "1.3.1.0";
 
         #region Save Data
         public void OnLoadLocal(LocalSaveData s)
